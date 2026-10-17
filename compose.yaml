@@ -1,0 +1,13 @@
+# Local stack: blob_frontend on http://localhost:5173.
+# The browser calls api_gateway at localhost:8080 directly, so this container
+# needs no network access to the services; start their stacks first anyway.
+name: blob-frontend
+
+services:
+  frontend:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8080
+    ports:
+      - "5173:5173"

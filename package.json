@@ -1,0 +1,41 @@
+{
+  "name": "blob_frontend",
+  "private": true,
+  "scripts": {
+    "dev": "bun --bun next dev -p 5173",
+    "build": "bun --bun next build",
+    "start": "bun --bun next start -p 5173",
+    "prepare": "husky",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "typecheck": "next typegen && tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "next": "16.4.2",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.15",
+    "@types/bun": "^1.4.3",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0",
+    "typescript": "^5"
+  },
+  "packageManager": "bun@1.4.2",
+  "ignoreScripts": [
+    "sharp",
+    "unrs-resolver"
+  ],
+  "trustedDependencies": [
+    "sharp",
+    "unrs-resolver"
+  ],
+  "type": "module",
+  "lint-staged": {
+    "*.{ts,tsx,js,json,css}": "biome check --write --no-errors-on-unmatched"
+  }
+}
