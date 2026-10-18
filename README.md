@@ -3,16 +3,16 @@
 Web app for the Blob_storage system: sign up, sign in, upload files and download them again. Built with Next.js (App Router) and run with Bun.
 
 ```
-Browser ──▶ blob_frontend (Next.js, :5173)
-   │  fetch(credentials: "include")
-   ▼
-api_gateway (:8080)
-   ├── /api/auth/*  ──▶ auth_service  (:4000)  register, login, refresh, logout, me
-   └── /api/blob/*  ──▶ blob_storage  (:3000)  upload, list files, download links
+Browser ──pages + /api/*──▶ blob_frontend (Next.js, :5173)
+                               │  rewrite /api/* (server side)
+                               ▼
+                            api_gateway (:8080)
+                               ├── /api/auth/*  ──▶ auth_service  (:4000)  register, login, refresh, logout, me
+                               └── /api/blob/*  ──▶ blob_storage  (:3000)  upload, list files, download links
 Browser ──presigned link──▶ S3 (the file itself)
 ```
 
-The app only talks to api_gateway. Downloads go straight from S3 to the browser through a short-lived presigned link.
+The browser only talks to this app's own address: it calls `/api/...` here, and the Next.js server forwards those requests to api_gateway. So there is no CORS, and the app works the same whether you open it at `localhost`, `127.0.0.1`, `0.0.0.0` or your machine's network IP. Downloads go straight from S3 to the browser through a short-lived presigned link.
 
 ## Requirements
 
@@ -28,18 +28,18 @@ bun run dev   # http://localhost:5173
 
 ### Environment
 
-Both are read at **build time** (Next.js inlines `NEXT_PUBLIC_*` into the browser bundle), so rebuild after changing them.
+Both are read at **build time** (Next.js bakes them into the build), so restart `bun run dev` or rebuild the image after changing them.
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `NEXT_PUBLIC_API_URL` | `http://localhost:8080` | api_gateway's address, as the browser reaches it. |
+| `GATEWAY_URL` | `http://localhost:8080` (`http://gateway:8080` in Docker) | Where this server forwards `/api/*`. Only the Next.js server uses it; the browser never sees it. |
 | `NEXT_PUBLIC_MAX_UPLOAD_BYTES` | `26214400` (25 MB) | Size checked before uploading. Keep it equal to blob_storage's `MAX_UPLOAD_BYTES`; the server still enforces its own limit. |
 
-The other services must allow this app's origin: `CORS_ORIGIN=http://localhost:5173` in api_gateway (its default).
+Run api_gateway with `TRUST_PROXY=true` (its compose file does), so it rate limits by the browser's address that this server forwards in `X-Forwarded-For` instead of by this server's address.
 
 ### Run everything with Docker
 
-Start the stacks in this order. auth_service's creates the shared `blob-storage` network the next two join:
+Start the stacks in this order. auth_service's creates the shared `blob-storage` network the others join; this one reaches the gateway on it as `gateway`:
 
 ```bash
 cd ../auth_service  && docker compose up -d --build   # :4000
@@ -61,7 +61,7 @@ Then open http://localhost:5173 and create an account.
 - **Expired token:** any request that gets `401` refreshes once and retries. If the refresh fails, you're sent to `/login`.
 - **One refresh at a time:** auth_service rotates the refresh cookie on every refresh and revokes every session if an old one is reused. Parallel refreshes would trip that, so they share a single request.
 
-`localhost:5173` and `localhost:8080` are the same site (the port doesn't count), so the `SameSite=Strict` cookie is sent to the gateway.
+The cookie is set on this app's own address (auth_service's response passes back through the gateway and this server), so the browser treats it as first-party and sends it with every `/api/*` call, whatever host name you opened the app with.
 
 ## Project layout
 

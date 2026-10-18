@@ -168,3 +168,11 @@ test("formatBytes", () => {
     expect(formatBytes(1536)).toBe("1.5 KB");
     expect(formatBytes(25 * 1024 * 1024)).toBe("25 MB");
 });
+
+test("with an empty baseUrl, calls go to the page's own origin", async () => {
+    const { fetch, calls } = fakeFetch([ok({ files: [] })]);
+    const api = createApi({ baseUrl: "", fetch });
+
+    await api.listFiles();
+    expect(calls[0]?.url).toBe("/api/blob/files");
+});
