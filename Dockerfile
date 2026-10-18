@@ -8,11 +8,11 @@ COPY package.json bun.lock ./
 RUN bun install --frozen-lockfile --ignore-scripts
 
 COPY . .
-# NEXT_PUBLIC_* values are baked into the browser bundle at build time,
-# so the gateway's address is a build argument, not a runtime variable.
-ARG NEXT_PUBLIC_API_URL=http://localhost:8080
+# Both are read at build time: GATEWAY_URL is baked into the server's
+# /api/* rewrite, NEXT_PUBLIC_* into the browser bundle.
+ARG GATEWAY_URL=http://gateway:8080
 ARG NEXT_PUBLIC_MAX_UPLOAD_BYTES=26214400
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
+ENV GATEWAY_URL=$GATEWAY_URL \
     NEXT_PUBLIC_MAX_UPLOAD_BYTES=$NEXT_PUBLIC_MAX_UPLOAD_BYTES \
     NEXT_TELEMETRY_DISABLED=1
 RUN bun run build

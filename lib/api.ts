@@ -1,5 +1,6 @@
-// Talks to api_gateway, which routes /api/auth/* to auth_service and
-// /api/blob/* to blob_storage.
+// Calls /api/* on the page's own origin. This app's server forwards those to
+// api_gateway (see next.config.ts), which routes /api/auth/* to auth_service
+// and /api/blob/* to blob_storage.
 //
 // The access token lives only in this closure (memory), as auth_service
 // requires; the refresh token is an httpOnly cookie the browser sends itself.
@@ -175,6 +176,4 @@ export type Api = ReturnType<typeof createApi>;
 
 // One instance for the whole app, so every component shares the token and
 // the in-flight refresh.
-export const api = createApi({
-    baseUrl: process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080",
-});
+export const api = createApi({ baseUrl: "" });
