@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { AccountPanel } from "@/components/AccountPanel";
 import { FilesPanel } from "@/components/FilesPanel";
 import { useAuth } from "./providers";
 
@@ -33,6 +34,7 @@ export default function Home() {
                 </div>
             </header>
             <FilesPanel />
+            <AccountPanel />
         </main>
     );
 }

@@ -64,6 +64,17 @@ button.secondary {
     color: var(--accent);
 }
 
+button.danger {
+    border-color: var(--error);
+    background: var(--error);
+    color: #fff;
+}
+
+button.secondary.danger {
+    background: transparent;
+    color: var(--error);
+}
+
 button:disabled {
     opacity: 0.6;
     cursor: default;
@@ -193,6 +204,29 @@ label {
 
 .files .actions {
     text-align: right;
+    white-space: nowrap;
+}
+
+.files .actions button + button {
+    margin-left: 0.5rem;
+}
+
+.danger-zone {
+    margin-top: 1.5rem;
+}
+
+.danger-zone h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1.1rem;
+}
+
+.danger-zone .muted {
+    margin-bottom: 1rem;
+}
+
+.danger-zone .toolbar {
+    justify-content: flex-end;
+    margin-top: 1rem;
 }
 
 @media (max-width: 640px) {

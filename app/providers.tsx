@@ -21,6 +21,9 @@ type AuthContextValue = {
     login(email: string, password: string): Promise<void>;
     register(email: string, password: string): Promise<void>;
     logout(): Promise<void>;
+    // Deletes the account and all files; throws ApiError (e.g. wrong
+    // password) and stays signed in if it fails.
+    deleteAccount(password: string): Promise<void>;
     // Called when a request finds the session gone (refresh failed).
     sessionExpired(): void;
 };
@@ -69,13 +72,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setState({ status: "signedOut" });
     }, []);
 
+    const deleteAccount = useCallback(async (password: string) => {
+        await api.deleteAccount(password);
+        setState({ status: "signedOut" });
+    }, []);
+
     const sessionExpired = useCallback(() => {
         setState({ status: "signedOut" });
     }, []);
 
     const value = useMemo(
-        () => ({ state, login, register, logout, sessionExpired }),
-        [state, login, register, logout, sessionExpired],
+        () => ({
+            state,
+            login,
+            register,
+            logout,
+            deleteAccount,
+            sessionExpired,
+        }),
+        [state, login, register, logout, deleteAccount, sessionExpired],
     );
     return <AuthContext value={value}>{children}</AuthContext>;
 }

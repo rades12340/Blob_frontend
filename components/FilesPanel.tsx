@@ -17,6 +17,7 @@ export function FilesPanel() {
     const [error, setError] = useState<string | null>(null);
     const [uploading, setUploading] = useState<string | null>(null);
     const [downloading, setDownloading] = useState<string | null>(null);
+    const [deleting, setDeleting] = useState<string | null>(null);
     const input = useRef<HTMLInputElement>(null);
 
     // Every request goes through here, so an expired session sends the user
@@ -93,6 +94,22 @@ export function FilesPanel() {
         }
     }
 
+    async function onDelete(file: StoredFile) {
+        if (!window.confirm(`Delete "${file.name}" permanently?`)) return;
+        setError(null);
+        setDeleting(file.id);
+        try {
+            await api.deleteFile(file.id);
+            setFiles((current) =>
+                (current ?? []).filter((f) => f.id !== file.id),
+            );
+        } catch (caught) {
+            report(caught, "Couldn't delete the file.");
+        } finally {
+            setDeleting(null);
+        }
+    }
+
     return (
         <section className="card">
             <div className="toolbar">
@@ -162,6 +179,16 @@ export function FilesPanel() {
                                         {downloading === file.id
                                             ? "Preparing…"
                                             : "Download"}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="secondary danger"
+                                        disabled={deleting === file.id}
+                                        onClick={() => onDelete(file)}
+                                    >
+                                        {deleting === file.id
+                                            ? "Deleting…"
+                                            : "Delete"}
                                     </button>
                                 </td>
                             </tr>
