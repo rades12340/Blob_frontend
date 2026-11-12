@@ -164,6 +164,31 @@ export function createApi({
             );
         },
 
+        async deleteFile(id: string): Promise<void> {
+            const response = await authed(
+                `/api/blob/files/${encodeURIComponent(id)}`,
+                { method: "DELETE" },
+            );
+            if (!response.ok) throw await errorFrom(response);
+        },
+
+        // Permanently deletes the account and every file (GDPR erasure).
+        // auth_service answers a wrong password with 401 too, so this can't
+        // go through `authed`, which would treat that as an expired session
+        // and sign the user out. Instead it starts from a fresh token.
+        async deleteAccount(password: string): Promise<void> {
+            if (!(await refresh())) {
+                throw new ApiError("Your session has expired.", 401);
+            }
+            const response = await send("/api/auth/me", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ password }),
+            });
+            if (!response.ok) throw await errorFrom(response);
+            accessToken = null;
+        },
+
         async getDownloadLink(id: string): Promise<DownloadLink> {
             return json<DownloadLink>(
                 await authed(`/api/blob/download/${encodeURIComponent(id)}`),

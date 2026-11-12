@@ -162,6 +162,61 @@ test("download ids are escaped into the path", async () => {
     expect(calls[0]?.url).toBe("http://gw/api/blob/download/..%2F..%2Fx");
 });
 
+test("deleteFile sends DELETE with the token and an escaped id", async () => {
+    const { fetch, calls } = fakeFetch([
+        ok({ accessToken: "t" }),
+        () => new Response(null, { status: 204 }),
+    ]);
+    const api = createApi({ baseUrl: "http://gw", fetch });
+    await api.login("me@example.com", "password123");
+
+    await api.deleteFile("a/b");
+    expect(calls[1]?.url).toBe("http://gw/api/blob/files/a%2Fb");
+    expect(calls[1]?.init.method).toBe("DELETE");
+    expect(calls[1]?.auth).toBe("Bearer t");
+});
+
+test("deleteAccount refreshes, sends the password and signs out", async () => {
+    const { fetch, calls } = fakeFetch([
+        ok({ accessToken: "fresh" }),
+        () => new Response(null, { status: 204 }),
+    ]);
+    const api = createApi({ baseUrl: "http://gw", fetch });
+
+    await api.deleteAccount("password123");
+    expect(calls[0]?.url).toBe("http://gw/api/auth/refresh");
+    expect(calls[1]?.url).toBe("http://gw/api/auth/me");
+    expect(calls[1]?.init.method).toBe("DELETE");
+    expect(calls[1]?.auth).toBe("Bearer fresh");
+    expect(JSON.parse(String(calls[1]?.init.body))).toEqual({
+        password: "password123",
+    });
+    expect(api.isSignedIn).toBe(false);
+});
+
+test("a wrong password on deleteAccount keeps the user signed in", async () => {
+    const { fetch } = fakeFetch([
+        ok({ accessToken: "fresh" }),
+        status(401, { error: "Wrong password" }),
+    ]);
+    const api = createApi({ baseUrl: "http://gw", fetch });
+
+    const error = await api.deleteAccount("nope").catch((e) => e);
+    expect(error).toBeInstanceOf(ApiError);
+    expect(error.message).toBe("Wrong password");
+    expect(api.isSignedIn).toBe(true);
+});
+
+test("deleteAccount reports an expired session without calling DELETE", async () => {
+    const { fetch, calls } = fakeFetch([status(401)]);
+    const api = createApi({ baseUrl: "http://gw", fetch });
+
+    const error = await api.deleteAccount("password123").catch((e) => e);
+    expect(error.status).toBe(401);
+    expect(calls).toHaveLength(1);
+    expect(api.isSignedIn).toBe(false);
+});
+
 test("formatBytes", () => {
     expect(formatBytes(0)).toBe("0 B");
     expect(formatBytes(1023)).toBe("1023 B");
